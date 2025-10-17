@@ -110,12 +110,25 @@
       "redirectOnDeny": "/login"
     }
   },
-  "/saved": {
+"/saved": {
     "allow": {
       "when": {
         "conditions": [
           {
             "label": "Saved hotels require authentication",
+            "rule": "authenticated"
+          }
+        ]
+      },
+      "redirectOnDeny": "/login"
+    }
+  },
+  "/settings": {
+    "allow": {
+      "when": {
+        "conditions": [
+          {
+            "label": "Settings require authentication",
             "rule": "authenticated"
           }
         ]

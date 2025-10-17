@@ -1,13 +1,14 @@
-import { useState, useRef, useEffect } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import Button from "@/components/atoms/Button";
+import { useSelector } from "react-redux";
 import ApperIcon from "@/components/ApperIcon";
-import { cn } from "@/utils/cn";
+import Button from "@/components/atoms/Button";
+import Bookings from "@/components/pages/Bookings";
 import { useAuth } from "@/layouts/Root";
-
-const Header = () => {
-  const navigate = useNavigate();
+function Header() {
   const { logout } = useAuth();
+  const { user } = useSelector((state) => state.user);
+  const navigate = useNavigate();
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const userMenuRef = useRef(null);
@@ -124,12 +125,15 @@ const Header = () => {
                   </Link>
                   <hr className="my-2 border-gray-100" />
                   <button
-                    className="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 w-full text-left"
-                    onClick={() => setShowUserMenu(false)}
-                  >
-                    <ApperIcon name="Settings" className="w-4 h-4" />
-                    Settings
-                  </button>
+className="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 w-full text-left"
+                  onClick={() => {
+                    navigate('/settings');
+                    setShowUserMenu(false);
+                  }}
+                >
+                  <ApperIcon name="Settings" className="w-4 h-4" />
+                  Settings
+                </button>
                   <button
                     className="flex items-center gap-3 px-4 py-2 text-sm text-red-600 hover:bg-red-50 w-full text-left"
                     onClick={handleLogout}
@@ -169,13 +173,16 @@ const Header = () => {
               </Link>
             ))}
             <hr className="my-3 border-gray-200" />
-            <button
-              onClick={() => setIsMobileMenuOpen(false)}
-              className="flex items-center gap-3 px-4 py-3 text-gray-700 hover:bg-gray-50 rounded-lg transition-colors w-full text-left"
-            >
-              <ApperIcon name="Settings" className="w-5 h-5" />
-              <span className="font-medium">Settings</span>
-            </button>
+<button
+            onClick={() => {
+              navigate('/settings');
+              setIsMobileMenuOpen(false);
+            }}
+            className="flex items-center gap-3 px-4 py-3 text-gray-700 hover:bg-gray-50 rounded-lg transition-colors w-full text-left"
+          >
+            <ApperIcon name="Settings" className="w-5 h-5" />
+            <span className="font-medium">Settings</span>
+          </button>
           </div>
         )}
       </div>
