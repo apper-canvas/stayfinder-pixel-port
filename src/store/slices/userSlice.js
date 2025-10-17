@@ -3,6 +3,7 @@ import { createSlice } from '@reduxjs/toolkit';
 const initialState = {
   user: null,
   isAuthenticated: false,
+  isInitialized: false,
   preferences: {
     currency: 'USD',
     language: 'en',
@@ -15,12 +16,15 @@ const userSlice = createSlice({
   initialState,
   reducers: {
     setUser: (state, action) => {
-      state.user = action.payload;
+      state.user = JSON.parse(JSON.stringify(action.payload));
       state.isAuthenticated = !!action.payload;
     },
-    logout: (state) => {
+    clearUser: (state) => {
       state.user = null;
       state.isAuthenticated = false;
+    },
+    setInitialized: (state, action) => {
+      state.isInitialized = action.payload;
     },
     updatePreferences: (state, action) => {
       state.preferences = { ...state.preferences, ...action.payload };

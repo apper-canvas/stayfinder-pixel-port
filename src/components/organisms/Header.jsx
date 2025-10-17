@@ -3,9 +3,11 @@ import { Link, useNavigate } from "react-router-dom";
 import Button from "@/components/atoms/Button";
 import ApperIcon from "@/components/ApperIcon";
 import { cn } from "@/utils/cn";
+import { useAuth } from "@/layouts/Root";
 
 const Header = () => {
   const navigate = useNavigate();
+  const { logout } = useAuth();
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const userMenuRef = useRef(null);
@@ -31,6 +33,11 @@ const Header = () => {
   const handleSearchClick = () => {
     navigate("/");
     setIsMobileMenuOpen(false);
+  };
+
+  const handleLogout = async () => {
+    setShowUserMenu(false);
+    await logout();
   };
 
   return (
@@ -122,6 +129,13 @@ const Header = () => {
                   >
                     <ApperIcon name="Settings" className="w-4 h-4" />
                     Settings
+                  </button>
+                  <button
+                    className="flex items-center gap-3 px-4 py-2 text-sm text-red-600 hover:bg-red-50 w-full text-left"
+                    onClick={handleLogout}
+                  >
+                    <ApperIcon name="LogOut" className="w-4 h-4" />
+                    Logout
                   </button>
                 </div>
               )}

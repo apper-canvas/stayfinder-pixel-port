@@ -1,48 +1,167 @@
-import roomsData from "@/services/mockData/rooms.json";
+import { getApperClient } from '@/services/apperClient';
+import { toast } from 'react-toastify';
 
 class RoomService {
   constructor() {
-    this.rooms = [...roomsData];
+    this.tableName = 'room_c';
+  }
+
+  parseRoom(room) {
+    try {
+      return {
+        ...room,
+        hotelId: room.hotel_id_c?.Id || room.hotel_id_c,
+        name: room.name_c || room.Name || '',
+        type: room.type_c || '',
+        capacity: room.capacity_c || 0,
+        bedConfiguration: room.bed_configuration_c || '',
+        photos: room.photos_c ? JSON.parse(room.photos_c) : [],
+        amenities: room.amenities_c ? JSON.parse(room.amenities_c) : [],
+        pricePerNight: room.price_per_night_c || 0,
+        available: room.available_c !== undefined ? room.available_c : true,
+        maxOccupancy: room.max_occupancy_c || room.capacity_c || 0
+      };
+    } catch (error) {
+      console.error('Error parsing room data:', error);
+      return room;
+    }
   }
 
   async getAllRooms() {
-    await new Promise(resolve => setTimeout(resolve, 200));
-    return [...this.rooms];
+    try {
+      const apperClient = getApperClient();
+      if (!apperClient) {
+        throw new Error('ApperClient not initialized');
+      }
+
+      const response = await apperClient.fetchRecords(this.tableName, {
+        fields: [
+          { field: { Name: 'Id' } },
+          { field: { Name: 'Name' } },
+          { field: { Name: 'hotel_id_c' } },
+          { field: { Name: 'name_c' } },
+          { field: { Name: 'type_c' } },
+          { field: { Name: 'capacity_c' } },
+          { field: { Name: 'bed_configuration_c' } },
+          { field: { Name: 'photos_c' } },
+          { field: { Name: 'amenities_c' } },
+          { field: { Name: 'price_per_night_c' } },
+          { field: { Name: 'available_c' } },
+          { field: { Name: 'max_occupancy_c' } }
+        ],
+        pagingInfo: { limit: 100, offset: 0 }
+      });
+
+      if (!response.success) {
+        console.error(response.message);
+        toast.error(response.message);
+        return [];
+      }
+
+      return response.data.map(room => this.parseRoom(room));
+    } catch (error) {
+      console.error('Error fetching rooms:', error?.response?.data?.message || error);
+      toast.error('Failed to load rooms');
+      return [];
+    }
   }
 
   async getRoomById(id) {
-    await new Promise(resolve => setTimeout(resolve, 150));
-    const room = this.rooms.find(r => r.Id === parseInt(id));
-    if (!room) {
-      throw new Error("Room not found");
+    try {
+      const apperClient = getApperClient();
+      if (!apperClient) {
+        throw new Error('ApperClient not initialized');
+      }
+
+      const response = await apperClient.getRecordById(this.tableName, id, {
+        fields: [
+          { field: { Name: 'Id' } },
+          { field: { Name: 'Name' } },
+          { field: { Name: 'hotel_id_c' } },
+          { field: { Name: 'name_c' } },
+          { field: { Name: 'type_c' } },
+          { field: { Name: 'capacity_c' } },
+          { field: { Name: 'bed_configuration_c' } },
+          { field: { Name: 'photos_c' } },
+          { field: { Name: 'amenities_c' } },
+          { field: { Name: 'price_per_night_c' } },
+          { field: { Name: 'available_c' } },
+          { field: { Name: 'max_occupancy_c' } }
+        ]
+      });
+
+      if (!response.success) {
+        console.error(response.message);
+        toast.error(response.message);
+        throw new Error('Room not found');
+      }
+
+      return this.parseRoom(response.data);
+    } catch (error) {
+      console.error(`Error fetching room ${id}:`, error?.response?.data?.message || error);
+      throw error;
     }
-    return { ...room };
   }
 
   async getRoomsByHotelId(hotelId) {
-    await new Promise(resolve => setTimeout(resolve, 250));
-    return this.rooms.filter(room => room.hotelId === hotelId.toString());
+    try {
+      const apperClient = getApperClient();
+      if (!apperClient) {
+        throw new Error('ApperClient not initialized');
+      }
+
+      const response = await apperClient.fetchRecords(this.tableName, {
+        fields: [
+          { field: { Name: 'Id' } },
+          { field: { Name: 'Name' } },
+          { field: { Name: 'hotel_id_c' } },
+          { field: { Name: 'name_c' } },
+          { field: { Name: 'type_c' } },
+          { field: { Name: 'capacity_c' } },
+          { field: { Name: 'bed_configuration_c' } },
+          { field: { Name: 'photos_c' } },
+          { field: { Name: 'amenities_c' } },
+          { field: { Name: 'price_per_night_c' } },
+          { field: { Name: 'available_c' } },
+          { field: { Name: 'max_occupancy_c' } }
+        ],
+        where: [{
+          FieldName: 'hotel_id_c',
+          Operator: 'EqualTo',
+          Values: [parseInt(hotelId)]
+        }],
+        pagingInfo: { limit: 100, offset: 0 }
+      });
+
+      if (!response.success) {
+        console.error(response.message);
+        return [];
+      }
+
+      return response.data.map(room => this.parseRoom(room));
+    } catch (error) {
+      console.error(`Error fetching rooms for hotel ${hotelId}:`, error);
+      return [];
+    }
   }
 
   async checkRoomAvailability(roomId, checkInDate, checkOutDate, guestCount) {
-    await new Promise(resolve => setTimeout(resolve, 300));
-    
-    const room = this.rooms.find(r => r.Id === parseInt(roomId));
-    if (!room) {
-      throw new Error("Room not found");
+    try {
+      const room = await this.getRoomById(roomId);
+      
+      const isAvailable = room.available && guestCount <= room.maxOccupancy;
+      
+      return {
+        available: isAvailable,
+        room: room,
+        pricePerNight: room.pricePerNight,
+        totalNights: this.calculateNights(checkInDate, checkOutDate),
+        totalPrice: room.pricePerNight * this.calculateNights(checkInDate, checkOutDate)
+      };
+    } catch (error) {
+      console.error('Error checking room availability:', error);
+      throw error;
     }
-    
-    // Simulate availability check
-    // In real app, this would check against booking database
-    const isAvailable = room.available && guestCount <= room.maxOccupancy;
-    
-    return {
-      available: isAvailable,
-      room: { ...room },
-      pricePerNight: room.pricePerNight,
-      totalNights: this.calculateNights(checkInDate, checkOutDate),
-      totalPrice: room.pricePerNight * this.calculateNights(checkInDate, checkOutDate)
-    };
   }
 
   calculateNights(checkInDate, checkOutDate) {
@@ -53,20 +172,23 @@ class RoomService {
   }
 
   async getAvailableRooms(hotelId, checkInDate, checkOutDate, guestCount) {
-    await new Promise(resolve => setTimeout(resolve, 350));
-    
-    const hotelRooms = this.rooms.filter(room => room.hotelId === hotelId.toString());
-    const availableRooms = hotelRooms.filter(room => 
-      room.available && guestCount <= room.maxOccupancy
-    );
-    
-    const nights = this.calculateNights(checkInDate, checkOutDate);
-    
-    return availableRooms.map(room => ({
-      ...room,
-      totalNights: nights,
-      totalPrice: room.pricePerNight * nights
-    }));
+    try {
+      const hotelRooms = await this.getRoomsByHotelId(hotelId);
+      const availableRooms = hotelRooms.filter(room => 
+        room.available && guestCount <= room.maxOccupancy
+      );
+      
+      const nights = this.calculateNights(checkInDate, checkOutDate);
+      
+      return availableRooms.map(room => ({
+        ...room,
+        totalNights: nights,
+        totalPrice: room.pricePerNight * nights
+      }));
+    } catch (error) {
+      console.error('Error fetching available rooms:', error);
+      return [];
+    }
   }
 }
 
